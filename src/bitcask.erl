@@ -469,8 +469,8 @@ open_fold_files(Dirname, Keydir, Count) ->
                 maybe_log_missing_file(Dirname, Keydir, ErrFile, Err),
                 open_fold_files(Dirname, Keydir, Count-1)
         end
-    catch X:Y ->
-            {error, {X,Y, erlang:get_stacktrace()}}
+    catch X:Y:S ->
+            {error, {X,Y,S}}
     end.
 
 maybe_log_missing_file(Dirname, Keydir, ErrFile, enoent) ->
@@ -589,8 +589,8 @@ merge(Dirname, Opts, {FilesToMerge0, ExpiredFiles0}) ->
     catch
         throw:Reason ->
             Reason;
-        X:Y ->
-            {error, {generic_failure, X, Y, erlang:get_stacktrace()}}
+        X:Y:S ->
+            {error, {generic_failure, X, Y, S}}
     end.
 
 %% Inner merge function, assumes that bitcask is running and all files exist.
@@ -1323,9 +1323,9 @@ init_keydir_scan_key_files(Dirname, KeyDir, KT, Count) ->
                                           F <- SetuidFiles]),
                 bitcask_nifs:increment_file_id(KeyDir, MaxSetuid)
         end
-    catch _X:_Y ->
+    catch _X:_Y:_S ->
             error_msg_perhaps("scan_key_files: ~p ~p @ ~p\n",
-                              [_X, _Y, erlang:get_stacktrace()]),
+                              [_X, _Y, _S]),
             init_keydir_scan_key_files(Dirname, KeyDir, KT, Count - 1)
     end.
 
@@ -1930,10 +1930,10 @@ purge_setuid_files(Dirname) ->
                                               [length(StaleFs), Dirname])
                 end
             catch
-                X:Y ->
+                X:Y:S ->
                     error_msg_perhaps("While deleting stale merge input "
                                       "files from ~p: ~p @ ~p\n",
-                                      [X, Y, erlang:get_stacktrace()])
+                                      [X, Y, S])
             after
                 bitcask_lockops:release(WriteLock)
             end;
